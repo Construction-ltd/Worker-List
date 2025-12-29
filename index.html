@@ -3,107 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Worker List</title>
+<title>Professional Worker List</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
+    :root {
+        --primary-color: #005bbb;
+        --secondary-color: #1976d2;
+        --bg-color: #f4f7fa;
+        --white: #ffffff;
+    }
+
     body {
         font-family: "Poppins", sans-serif;
-        background: #eef3f7;
+        background-color: var(--bg-color);
         margin: 0;
         padding: 20px;
+        color: #333;
+    }
+
+    .main-container {
+        max-width: 1100px;
+        margin: auto;
     }
 
     h2 {
         text-align: center;
-        color: #005bbb;
+        color: var(--primary-color);
         font-weight: 700;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
+    /* Search Bar Design */
+    .search-wrapper {
+        position: relative;
+        margin-bottom: 20px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #workerSearch {
+        width: 100%;
+        padding: 12px 20px;
+        border: 2px solid #ddd;
+        border-radius: 50px;
+        font-size: 15px;
+        outline: none;
+        transition: 0.3s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-sizing: border-box;
+    }
+
+    #workerSearch:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 4px 15px rgba(25, 118, 210, 0.2);
+    }
+
+    /* Table Design */
     .table-container {
-        max-width: 1000px;
-        margin: auto;
-        background: #fff;
-        padding: 20px;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        overflow-x: auto;
+        background: var(--white);
+        padding: 10px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
+        border-radius: 15px;
+        overflow: hidden;
     }
 
     thead {
-        background: linear-gradient(90deg, #1976d2, #42a5f5);
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
         color: white;
     }
 
-    th, td {
-        padding: 14px;
+    th {
+        padding: 18px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 15px;
+        text-transform: uppercase;
+    }
+
+    td {
+        padding: 16px;
         text-align: left;
         font-size: 14px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
     }
 
     tr:hover {
-        background: #f1f9ff;
-        transition: 0.3s;
+        background-color: #f9fcff;
+        transform: scale(1.002);
+        transition: 0.2s;
     }
 
-    /* Hide Timestamp Column */
-    .hide {
-        display: none;
+    /* Status Badge Style */
+    .rate-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .id-cell {
+        font-weight: 700;
+        color: #555;
+    }
+
+    /* Utility */
+    .hide { display: none; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+        th, td { padding: 12px; font-size: 12px; }
+        #workerSearch { font-size: 13px; }
     }
 </style>
 </head>
 <body>
 
-<h2>Worker List</h2>
+<div class="main-container">
+    <h2>Worker Management List</h2>
 
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th class="hide">Timestamp</th>
-                <th>Worker ID</th>
-                <th>Worker Name</th>
-                <th>Designation</th>
-                <th>Day Salary (Official)</th>
-                <th>Day Salary (Rate)</th>
-            </tr>
-        </thead>
-        <tbody id="workerTable"></tbody>
-    </table>
+    <div class="search-wrapper">
+        <input type="text" id="workerSearch" onkeyup="searchWorker()" placeholder="🔍 Search by Worker ID...">
+    </div>
+
+    <div class="table-container">
+        <table id="workerListTable">
+            <thead>
+                <tr>
+                    <th class="hide">Timestamp</th>
+                    <th>Worker ID</th>
+                    <th>Worker Name</th>
+                    <th>Designation</th>
+                    <th>Rate / Day</th>
+                </tr>
+            </thead>
+            <tbody id="workerTable">
+                </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    // CSV URL
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vScKUqfoXQNBZy7kPYd6bYpHV8_KsOMTDAA-Rx9PI03rZRUkoRHIz25htZDEuyhf8SerewYetdOgJai/pub?gid=544154648&single=true&output=csv";
 
+    // Data Fetching
     fetch(sheetURL)
         .then(res => res.text())
         .then(csv => {
-            let rows = csv.split("\n").slice(1); // Remove header
+            let rows = csv.split("\n").slice(1);
             let tableBody = document.getElementById("workerTable");
-
+            
             rows.forEach(row => {
-                let cols = row.split(",");
-
-                let tr = `
-                    <tr>
-                        <td class="hide">${cols[0]}</td>
-                        <td>${cols[1]}</td>
-                        <td>${cols[2]}</td>
-                        <td>${cols[3]}</td>
-                        <td>${cols[4]}</td>
-                        <td>${cols[5]}</td>
-                    </tr>
-                `;
-                tableBody.innerHTML += tr;
+                // Handle cases where CSV might have commas inside quotes
+                let cols = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+                
+                if (cols && cols.length >= 6) {
+                    let tr = `
+                        <tr>
+                            <td class="hide">${cols[0]}</td>
+                            <td class="id-cell">${cols[1]}</td>
+                            <td>${cols[2]}</td>
+                            <td>${cols[3]}</td>
+                            <td><span class="rate-badge">${cols[5]} TK</span></td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += tr;
+                }
             });
         });
+
+    // Real-time Search Function
+    function searchWorker() {
+        let input = document.getElementById("workerSearch");
+        let filter = input.value.toUpperCase();
+        let table = document.getElementById("workerTable");
+        let tr = table.getElementsByTagName("tr");
+
+        for (let i = 0; i < tr.length; i++) {
+            let idColumn = tr[i].getElementsByTagName("td")[1]; // Index 1 is Worker ID
+            if (idColumn) {
+                let txtValue = idColumn.textContent || idColumn.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
 </script>
 
 </body>
